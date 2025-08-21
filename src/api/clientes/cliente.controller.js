@@ -53,5 +53,16 @@ const uploadClientesCSV = async (req, res) => {
     res.status(201).json({ message: "Clientes importados com sucesso!", result });
   } catch (error) { res.status(500).json({ message: "Falha ao importar o arquivo CSV.", error: error.message }); }
 };
+const deleteAllClientes = async (req, res) => {
+  try {
+    const deletedCount = await clienteService.deleteAll(req.user);
+    res.status(200).json({ 
+      message: `Operação concluída. ${deletedCount} clientes foram deletados com sucesso.` 
+    });
+  } catch (error) {
+    // Se o serviço lançar o erro de "não é admin", o status será 403 Forbidden.
+    res.status(403).json({ message: error.message });
+  }
+};
 
-module.exports = { createCliente, getAllClientes, getClienteById, updateCliente, deleteCliente, uploadClientesCSV };
+module.exports = { createCliente, getAllClientes, getClienteById, updateCliente, deleteCliente, uploadClientesCSV, deleteAllClientes };
