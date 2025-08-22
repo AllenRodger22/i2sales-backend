@@ -1,34 +1,31 @@
 // /src/api/clientes/cliente.routes.js
-
 const express = require('express');
-const router = express.Router();
-const controller = require('./cliente.controller');
-const authMiddleware = require('../../middlewares/auth.middleware');
+const router = express.Router(); // Cria a instância do roteador
+const controller = require('./cliente.controller'); // Importa o controlador de clientes
+const authMiddleware = require('../../middlewares/auth.middleware'); // Importa o middleware de autenticação
+const multer = require('multer'); // Importa o multer para upload de arquivos
 
-// O multer foi removido pois não é mais necessário para a nova abordagem
-// const multer = require('multer');
-// const upload = multer({ storage: multer.memoryStorage() });
+// Configura o multer para armazenar o arquivo temporariamente na memória
+const upload = multer({ storage: multer.memoryStorage() });
 
 // ----------------------------------------------------------------------------------
+// APLICA O MIDDLEWARE DE AUTENTICAÇÃO A TODAS AS ROTAS DESTE ARQUIVO
+// Qualquer requisição para /api/clientes/* passará por esta verificação primeiro.
 router.use(authMiddleware);
 // ----------------------------------------------------------------------------------
 
-// A rota antiga /upload foi removida para corrigir o erro
-// router.post('/upload', upload.single('file'), controller.uploadClientesCSV);
-
-
 /**
- * @route   POST /api/clientes/bulk-import
- * @desc    Recebe um ARRAY de clientes (JSON) para importação em massa.
+ * @route   POST /api/clientes/upload
+ * @desc    Faz o upload de um arquivo CSV para importar múltiplos clientes
  * @access  Privado (requer token)
  */
-// Esta é a nova rota que chama a função correta que existe no seu controller
-router.post('/bulk-import', controller.bulkImportClientes);
-
+// Note como o middleware 'upload.single('file')' é colocado antes da função do controlador.
+// 'file' deve ser o nome do campo no formulário de upload do frontend.
+router.post('/upload', upload.single('file'), controller.uploadClientesCSV);
 
 /**
  * @route   POST /api/clientes
- * @desc    Cria um novo cliente (Cadastro Manual)
+ * @desc    Cria um novo cliente
  * @access  Privado (requer token)
  */
 router.post('/', controller.createCliente);
@@ -61,5 +58,5 @@ router.put('/:id', controller.updateCliente);
  */
 router.delete('/:id', controller.deleteCliente);
 
-
+// Exporta o roteador para ser usado no app.js
 module.exports = router;
