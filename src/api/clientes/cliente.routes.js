@@ -64,14 +64,14 @@ router.delete('/:id', controller.deleteCliente);
  * @desc    Obtém todos os leads arquivados (bolsão de leads)
  * @access  Privado (apenas gestores)
  */
-router.get('/archived', authMiddleware, requireRole('manager'), controller.getArchivedLeads);
+router.get('/archived', authMiddleware, requireRole(['manager', 'admin']), controller.getArchivedLeads);
 
 /**
  * @route   PATCH /api/clientes/:id/assign
  * @desc    Atribui um lead arquivado a um corretor
  * @access  Privado (apenas gestores)
  */
-router.patch('/:id/assign', authMiddleware, requireRole('manager'), controller.assignLead);
+router.patch('/:id/assign', authMiddleware, requireRole(['manager', 'admin']), controller.assignLead);
 
 /**
  * @route   PATCH /api/clientes/:id/archive

@@ -30,7 +30,7 @@ const create = async (data, userId) => {
  */
 const findAll = async (user) => {
     const query = {};
-    if (user.role !== 'manager') {
+    if (user.role !== 'manager' && user.role !== 'admin') {
         query.ownerId = new ObjectId(user.id); // Filtra os resultados pelo ID do dono
     }
     return await getDb().collection(collection).find(query).toArray();
@@ -47,7 +47,7 @@ const findById = async (id, user) => {
     if (!cliente) return null; // Se o cliente não existe, retorna nulo
 
     // Se o usuário não for manager E o dono do cliente não for ele, lança um erro de permissão
-    if (user.role !== 'manager' && cliente.ownerId.toString() !== user.id) {
+    if (user.role !== 'manager' && user.role !== 'admin' && cliente.ownerId.toString() !== user.id) {
         throw new Error('Acesso negado a este recurso.');
     }
     return cliente;
