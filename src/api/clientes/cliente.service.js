@@ -30,7 +30,7 @@ const create = async (data, userId) => {
  */
 const findAll = async (user) => {
     const query = {};
-    if (user.role !== 'admin') {
+    if (user.role !== 'gestor') {
         query.ownerId = new ObjectId(user.id); // Filtra os resultados pelo ID do dono
     }
     return await getDb().collection(collection).find(query).toArray();
@@ -46,8 +46,8 @@ const findById = async (id, user) => {
     const cliente = await getDb().collection(collection).findOne({ _id: new ObjectId(id) });
     if (!cliente) return null; // Se o cliente não existe, retorna nulo
 
-    // Se o usuário não for admin E o dono do cliente não for ele, lança um erro de permissão
-    if (user.role !== 'admin' && cliente.ownerId.toString() !== user.id) {
+    // Se o usuário não for gestor E o dono do cliente não for ele, lança um erro de permissão
+    if (user.role !== 'gestor' && cliente.ownerId.toString() !== user.id) {
         throw new Error('Acesso negado a este recurso.');
     }
     return cliente;
@@ -142,6 +142,63 @@ const importFromCSV = (buffer, user) => {
     });
 };
 
+/**
+ * Retorna todos os leads arquivados (bolsão de leads)
+ */
+const findArchived = async () => {
+    return await getDb().collection(collection).find({ isArchived: true }).toArray();
+};
+
+/**
+ * Atribui um lead arquivado a um corretor
+ */
+const assignLead = async (leadId, userId) => {
+    if (!ObjectId.isValid(leadId) || !ObjectId.isValid(userId)) {
+        throw new Error('IDs inválidos fornecidos.');
+    }
+
+    const result = await getDb().collection(collection).updateOne(
+        { _id: new ObjectId(leadId), isArchived: true },
+        { 
+            $set: { 
+                ownerId: new ObjectId(userId),
+                isArchived: false
+            }
+        }
+    );
+
+    return result.modifiedCount > 0;
+};
+
+/**
+ * Arquiva um lead (move para o bolsão)
+ */
+const archiveLead = async (leadId, user) => {
+    const lead = await findById(leadId, user);
+    if (!lead) {
+        throw new Error('Lead não encontrado ou sem permissão.');
+    }
+
+    const result = await getDb().collection(collection).updateOne(
+        { _id: new ObjectId(leadId) },
+        { 
+            $set: { 
+                ownerId: null,
+                isArchived: true
+            }
+        }
+    );
+
+    return result.modifiedCount > 0;
+};
+
+/**
+ * Busca todos os usuários corretores para seleção
+ */
+const findAllCorretores = async () => {
+    return await getDb().collection('users').find({ role: 'corretor' }).toArray();
+};
+
 module.exports = {
     create,
     findAll,
@@ -149,5 +206,9 @@ module.exports = {
     update,
     remove,
     importFromCSV,
+    findArchived,
+    assignLead,
+    archiveLead,
+    findAllCorretores,
 };
 
