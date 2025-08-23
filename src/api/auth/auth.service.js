@@ -39,8 +39,8 @@ const login = async ({ email, password }) => {
 };
 const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
-  // 7. Retornar o token gerado e o nome do usuário para o controller.
-  return { token, userName: user.name };
+  // 7. Retornar o token gerado, o nome do usuário e a role para o controller.
+  return { token, userName: user.name, role: user.role };
 };
 
 module.exports = {

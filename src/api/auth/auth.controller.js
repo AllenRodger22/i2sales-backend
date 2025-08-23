@@ -40,10 +40,10 @@ const login = async (req, res) => {
     }
 
     // Chama o serviço de autenticação para validar as credenciais e gerar um token
-    const { token, userName } = await authService.login(req.body);
+    const { token, userName, role } = await authService.login(req.body);
     
-    // Retorna o token e uma mensagem de sucesso
-    res.status(200).json({ token, userName, message: "Login bem-sucedido!" });
+    // Retorna o token, nome do usuário, role e uma mensagem de sucesso
+    res.status(200).json({ token, userName, role, message: "Login bem-sucedido!" });
 
   } catch (error) {
     // Se o serviço retornar um erro (ex: senha incorreta), o status é 401 (Não Autorizado)
