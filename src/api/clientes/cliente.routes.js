@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router(); // Cria a instância do roteador
 const controller = require('./cliente.controller'); // Importa o controlador de clientes
 const authMiddleware = require('../../middlewares/auth.middleware'); // Importa o middleware de autenticação
+const { requireRole } = require('../../middlewares/role.middleware'); // Importa o middleware de role
 const multer = require('multer'); // Importa o multer para upload de arquivos
 
 // Configura o multer para armazenar o arquivo temporariamente na memória
@@ -57,6 +58,27 @@ router.put('/:id', controller.updateCliente);
  * @access  Privado (requer token)
  */
 router.delete('/:id', controller.deleteCliente);
+
+/**
+ * @route   GET /api/clientes/archived
+ * @desc    Obtém todos os leads arquivados (bolsão de leads)
+ * @access  Privado (apenas gestores)
+ */
+router.get('/archived', authMiddleware, requireRole('gestor'), controller.getArchivedLeads);
+
+/**
+ * @route   PATCH /api/clientes/:id/assign
+ * @desc    Atribui um lead arquivado a um corretor
+ * @access  Privado (apenas gestores)
+ */
+router.patch('/:id/assign', authMiddleware, requireRole('gestor'), controller.assignLead);
+
+/**
+ * @route   PATCH /api/clientes/:id/archive
+ * @desc    Arquiva um lead (move para o bolsão)
+ * @access  Privado (requer token)
+ */
+router.patch('/:id/archive', authMiddleware, controller.archiveLead);
 
 // Exporta o roteador para ser usado no app.js
 module.exports = router;

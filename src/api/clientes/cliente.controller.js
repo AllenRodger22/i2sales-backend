@@ -87,6 +87,55 @@ const bulkImportClientes = async (req, res) => {
 };
 
 
+/**
+ * Retorna todos os leads arquivados (bolsão de leads)
+ */
+const getArchivedLeads = async (req, res) => {
+  try {
+    const archivedLeads = await clienteService.findArchived();
+    res.status(200).json(archivedLeads);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Atribui um lead arquivado a um corretor
+ */
+const assignLead = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: "ID do usuário é obrigatório." });
+    }
+
+    const assigned = await clienteService.assignLead(req.params.id, userId);
+    if (!assigned) {
+      return res.status(404).json({ message: "Lead não encontrado ou já atribuído." });
+    }
+
+    res.status(200).json({ message: "Lead atribuído com sucesso!" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Arquiva um lead (move para o bolsão)
+ */
+const archiveLead = async (req, res) => {
+  try {
+    const archived = await clienteService.archiveLead(req.params.id, req.user);
+    if (!archived) {
+      return res.status(404).json({ message: "Lead não encontrado." });
+    }
+
+    res.status(200).json({ message: "Lead arquivado com sucesso!" });
+  } catch (error) {
+    res.status(403).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   createCliente,       // Para o cadastro manual
   getAllClientes, 
@@ -95,5 +144,8 @@ module.exports = {
   deleteCliente, 
   // uploadClientesCSV, // <--- REMOVIDO dos exports
   deleteAllClientes,
-  bulkImportClientes   // <--- ADICIONADO: Para a importação em massa
+  bulkImportClientes,   // <--- ADICIONADO: Para a importação em massa
+  getArchivedLeads,
+  assignLead,
+  archiveLead,
 };
