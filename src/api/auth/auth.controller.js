@@ -51,23 +51,8 @@ const login = async (req, res) => {
   }
 };
 
-/**
- * Controlador para callback do Google OAuth
- */
-const googleCallback = async (req, res) => {
-  try {
-    const { token, user } = req.user;
-    
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}&name=${encodeURIComponent(user.name)}&role=${user.role}`);
-  } catch (error) {
-    res.status(500).json({ message: "Erro no callback do Google.", error: error.message });
-  }
-};
-
 // Exporta as funções para serem usadas pelo arquivo de rotas (auth.routes.js)
 module.exports = {
   register,
   login,
-  googleCallback,
 };
