@@ -42,8 +42,24 @@ const deleteCliente = async (req, res) => {
   } catch (error) { res.status(403).json({ message: error.message }); }
 };
 
-// <--- REMOVIDA: A função antiga que recebia o arquivo CSV foi substituída.
-// const uploadClientesCSV = async (req, res) => { ... };
+/**
+ * Faz upload de um arquivo CSV para importar múltiplos clientes
+ */
+const uploadClientesCSV = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Nenhum arquivo foi enviado." });
+    }
+
+    const result = await clienteService.importFromCSV(req.file.buffer, req.user);
+    res.status(201).json({ 
+      message: `${result.insertedCount} clientes foram importados com sucesso!`, 
+      result 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Falha ao importar arquivo CSV.", error: error.message });
+  }
+};
 
 const deleteAllClientes = async (req, res) => {
   try {
@@ -142,7 +158,7 @@ module.exports = {
   getClienteById, 
   updateCliente, 
   deleteCliente, 
-  // uploadClientesCSV, // <--- REMOVIDO dos exports
+  uploadClientesCSV, // <--- RESTAURADO: Para upload de CSV
   deleteAllClientes,
   bulkImportClientes,   // <--- ADICIONADO: Para a importação em massa
   getArchivedLeads,
