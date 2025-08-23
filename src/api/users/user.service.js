@@ -44,10 +44,10 @@ const findByEmail = async (email) => {
 };
 
 /**
- * Encontra todos os usuários com role 'user'
+ * Encontra todos os usuários disponíveis para seleção por manager/admin
  */
 const findAllCorretores = async () => {
-  return await getDb().collection(collection).find({ role: 'user' }).toArray();
+  return await getDb().collection(collection).find({}).project({ password: 0 }).toArray();
 };
 
 // Exporta as funções para que outros serviços (como o auth.service) possam usá-las.

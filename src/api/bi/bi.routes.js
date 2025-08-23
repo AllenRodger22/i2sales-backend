@@ -20,5 +20,6 @@ router.get('/kpis', controller.getKpis);
  * @access  Privado (apenas gestores)
  */
 router.get('/funnel', controller.getFunnel);
+router.get('/conversion-series', controller.getConversionSeries);
 
 module.exports = router;

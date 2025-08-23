@@ -1,6 +1,6 @@
 const { getDb } = require('../../config/database');
 
-const calculateKpis = async (startDate, endDate, userId = null) => {
+const calculateKpis = async (startDate, endDate, userIds = null) => {
   const collection = getDb().collection('clientes');
 
   const matchStage = {
@@ -10,9 +10,9 @@ const calculateKpis = async (startDate, endDate, userId = null) => {
     }
   };
 
-  if (userId) {
+  if (userIds && userIds.length) {
     const { ObjectId } = require('mongodb');
-    matchStage.ownerId = new ObjectId(userId);
+    matchStage.ownerId = { $in: userIds.map(id => new ObjectId(id)) };
   }
 
   const pipeline = [
@@ -103,7 +103,7 @@ const calculateKpis = async (startDate, endDate, userId = null) => {
   };
 };
 
-const calculateFunnel = async (startDate, endDate, userId = null) => {
+const calculateFunnel = async (startDate, endDate, userIds = null) => {
   const collection = getDb().collection('clientes');
 
   const matchStage = {
@@ -113,9 +113,9 @@ const calculateFunnel = async (startDate, endDate, userId = null) => {
     }
   };
 
-  if (userId) {
+  if (userIds && userIds.length) {
     const { ObjectId } = require('mongodb');
-    matchStage.ownerId = new ObjectId(userId);
+    matchStage.ownerId = { $in: userIds.map(id => new ObjectId(id)) };
   }
 
   const pipeline = [
@@ -195,8 +195,61 @@ const calculateFunnel = async (startDate, endDate, userId = null) => {
     }
   };
 };
+const calculateConversionSeries = async (startDate, endDate, userIds = null) => {
+  const collection = getDb().collection('clientes');
+
+  const matchBase = {};
+  if (userIds && userIds.length) {
+    const { ObjectId } = require('mongodb');
+    matchBase.ownerId = { $in: userIds.map(id => new ObjectId(id)) };
+  }
+
+  const leadsPipeline = [
+    { $match: matchBase },
+    {
+      $project: {
+        createdAt: { $ifNull: ['$data_cadastro', { $min: '$timeline.date' }] }
+      }
+    },
+    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, leads: { $sum: 1 } } },
+  ];
+
+  const vendasPipeline = [
+    { $match: matchBase },
+    { $unwind: '$timeline' },
+    { $match: { 'timeline.type': 'VendaGerada', 'timeline.date': { $gte: startDate, $lte: endDate } } },
+    { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$timeline.date' } }, vendas: { $sum: 1 } } },
+  ];
+
+  const [leads, vendas] = await Promise.all([
+    collection.aggregate(leadsPipeline).toArray(),
+    collection.aggregate(vendasPipeline).toArray()
+  ]);
+
+  const byDay = new Map(leads.map(l => [l._id, { date: l._id, leads: l.leads, vendas: 0 }]));
+  for (const v of vendas) {
+    const row = byDay.get(v._id) || { date: v._id, leads: 0, vendas: 0 };
+    row.vendas = v.vendas;
+    byDay.set(v._id, row);
+  }
+
+  const days = [];
+  const d = new Date(startDate);
+  const end = new Date(endDate);
+  while (d <= end) {
+    const key = d.toISOString().split('T')[0];
+    const row = byDay.get(key) || { date: key, leads: 0, vendas: 0 };
+    const conversion = row.leads > 0 ? Math.round((row.vendas / row.leads) * 100) : 0;
+    days.push({ ...row, conversion });
+    d.setDate(d.getDate() + 1);
+  }
+
+  return days;
+};
 
 module.exports = {
   calculateKpis,
   calculateFunnel,
+  calculateConversionSeries,
 };
