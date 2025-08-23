@@ -10,6 +10,18 @@ const getCorretores = async (req, res) => {
     }
 };
 
+const createUser = async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
+        const userId = await userService.create({ name, email, password, role });
+        res.status(201).json({ message: 'Usuário criado com sucesso', userId });
+    } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getCorretores,
+    createUser,
 };

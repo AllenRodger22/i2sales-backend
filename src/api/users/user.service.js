@@ -11,7 +11,7 @@ const collection = 'users';
  * @param {object} userData - Objeto contendo nome, email e senha do novo usuário.
  * @returns {Promise<ObjectId>} O ID do novo usuário inserido.
  */
-const create = async ({ name, email, password }) => {
+const create = async ({ name, email, password, role = 'user' }) => {
   // 1. Criptografa a senha antes de salvá-la.
   // O segundo argumento '10' é o "salt round", que define a força da criptografia. 10 é um bom padrão.
   // NUNCA salve senhas em texto puro no banco de dados.
@@ -22,7 +22,7 @@ const create = async ({ name, email, password }) => {
     name,
     email: email.toLowerCase(), // Salva o email em minúsculas para evitar duplicidade e facilitar a busca.
     password: hashedPassword, 
-    role: 'user',  // Salva a senha já criptografada.
+    role: role,  // Salva a senha já criptografada.
     createdAt: new Date(),      // Adiciona uma data de criação para referência.
   };
 
