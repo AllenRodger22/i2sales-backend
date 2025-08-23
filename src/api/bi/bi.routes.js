@@ -5,7 +5,7 @@ const authMiddleware = require('../../middlewares/auth.middleware');
 const { requireRole } = require('../../middlewares/role.middleware');
 
 router.use(authMiddleware);
-router.use(requireRole('gestor'));
+router.use(requireRole('manager'));
 
 /**
  * @route   GET /api/bi/kpis

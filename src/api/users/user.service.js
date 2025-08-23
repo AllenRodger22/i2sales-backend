@@ -22,7 +22,7 @@ const create = async ({ name, email, password }) => {
     name,
     email: email.toLowerCase(), // Salva o email em minúsculas para evitar duplicidade e facilitar a busca.
     password: hashedPassword, 
-    role: 'corretor',  // Salva a senha já criptografada.
+    role: 'user',  // Salva a senha já criptografada.
     createdAt: new Date(),      // Adiciona uma data de criação para referência.
   };
 
@@ -44,10 +44,10 @@ const findByEmail = async (email) => {
 };
 
 /**
- * Encontra todos os usuários com role 'corretor'
+ * Encontra todos os usuários com role 'user'
  */
 const findAllCorretores = async () => {
-  return await getDb().collection(collection).find({ role: 'corretor' }).toArray();
+  return await getDb().collection(collection).find({ role: 'user' }).toArray();
 };
 
 // Exporta as funções para que outros serviços (como o auth.service) possam usá-las.

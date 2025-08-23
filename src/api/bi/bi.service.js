@@ -1,16 +1,23 @@
 const { getDb } = require('../../config/database');
 
-const calculateKpis = async (startDate, endDate) => {
+const calculateKpis = async (startDate, endDate, userId = null) => {
   const collection = getDb().collection('clientes');
+
+  const matchStage = {
+    'timeline.date': {
+      $gte: startDate,
+      $lte: endDate
+    }
+  };
+
+  if (userId) {
+    const { ObjectId } = require('mongodb');
+    matchStage.ownerId = new ObjectId(userId);
+  }
 
   const pipeline = [
     {
-      $match: {
-        'timeline.date': {
-          $gte: startDate,
-          $lte: endDate
-        }
-      }
+      $match: matchStage
     },
     {
       $unwind: '$timeline'
@@ -39,8 +46,10 @@ const calculateKpis = async (startDate, endDate) => {
   if (result.length === 0) {
     return {
       vgvTotal: 0,
-      ticketMedio: 0,
+      numeroLigacoes: 0,
+      numeroDocumentos: 0,
       totalVendas: 0,
+      ticketMedio: 0,
       tempoMedioFechamento: 0
     };
   }
@@ -62,29 +71,56 @@ const calculateKpis = async (startDate, endDate) => {
 
     if (tempos.length > 0) {
       const tempoMedioMs = tempos.reduce((acc, tempo) => acc + tempo, 0) / tempos.length;
-      tempoMedioFechamento = Math.round(tempoMedioMs / (1000 * 60 * 60 * 24)); // em dias
+      tempoMedioFechamento = Math.round(tempoMedioMs / (1000 * 60 * 60 * 24));
     }
   }
 
+  const ligacoesPipeline = [
+    { $match: matchStage },
+    { $unwind: '$timeline' },
+    { $match: { 'timeline.type': 'Ligacao' } },
+    { $count: 'total' }
+  ];
+  
+  const documentosPipeline = [
+    { $match: matchStage },
+    { $match: { status: { $in: ['Aguardando Doc', 'Doc Completa', 'Em Análise'] } } },
+    { $count: 'total' }
+  ];
+  
+  const [ligacoesResult, documentosResult] = await Promise.all([
+    collection.aggregate(ligacoesPipeline).toArray(),
+    collection.aggregate(documentosPipeline).toArray()
+  ]);
+
   return {
     vgvTotal: data.vgvTotal || 0,
-    ticketMedio: Math.round(ticketMedio * 100) / 100,
+    numeroLigacoes: ligacoesResult[0]?.total || 0,
+    numeroDocumentos: documentosResult[0]?.total || 0,
     totalVendas: data.totalVendas,
+    ticketMedio: Math.round(ticketMedio * 100) / 100,
     tempoMedioFechamento
   };
 };
 
-const calculateFunnel = async (startDate, endDate) => {
+const calculateFunnel = async (startDate, endDate, userId = null) => {
   const collection = getDb().collection('clientes');
+
+  const matchStage = {
+    'timeline.date': {
+      $gte: startDate,
+      $lte: endDate
+    }
+  };
+
+  if (userId) {
+    const { ObjectId } = require('mongodb');
+    matchStage.ownerId = new ObjectId(userId);
+  }
 
   const pipeline = [
     {
-      $match: {
-        'timeline.date': {
-          $gte: startDate,
-          $lte: endDate
-        }
-      }
+      $match: matchStage
     },
     {
       $unwind: '$timeline'

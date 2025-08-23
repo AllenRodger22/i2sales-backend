@@ -30,7 +30,7 @@ const create = async (data, userId) => {
  */
 const findAll = async (user) => {
     const query = {};
-    if (user.role !== 'gestor') {
+    if (user.role !== 'manager') {
         query.ownerId = new ObjectId(user.id); // Filtra os resultados pelo ID do dono
     }
     return await getDb().collection(collection).find(query).toArray();
@@ -46,8 +46,8 @@ const findById = async (id, user) => {
     const cliente = await getDb().collection(collection).findOne({ _id: new ObjectId(id) });
     if (!cliente) return null; // Se o cliente não existe, retorna nulo
 
-    // Se o usuário não for gestor E o dono do cliente não for ele, lança um erro de permissão
-    if (user.role !== 'gestor' && cliente.ownerId.toString() !== user.id) {
+    // Se o usuário não for manager E o dono do cliente não for ele, lança um erro de permissão
+    if (user.role !== 'manager' && cliente.ownerId.toString() !== user.id) {
         throw new Error('Acesso negado a este recurso.');
     }
     return cliente;
@@ -196,7 +196,7 @@ const archiveLead = async (leadId, user) => {
  * Busca todos os usuários corretores para seleção
  */
 const findAllCorretores = async () => {
-    return await getDb().collection('users').find({ role: 'corretor' }).toArray();
+    return await getDb().collection('users').find({ role: 'user' }).toArray();
 };
 
 module.exports = {
