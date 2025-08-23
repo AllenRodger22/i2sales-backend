@@ -5,7 +5,7 @@ const clienteService = require('./cliente.service');
 // --- FUNÇÃO PARA CADASTRO MANUAL (PERMANECE IGUAL) ---
 const createCliente = async (req, res) => {
   try {
-    const clienteId = await clienteService.create(req.body, req.user.id);
+    const clienteId = await clienteService.create(req.body, 'default-user');
     res.status(201).json({ id: clienteId, message: "Cliente criado com sucesso!" });
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
@@ -13,14 +13,14 @@ const createCliente = async (req, res) => {
 // --- FUNÇÕES CRUD (PERMANECEM IGUAIS) ---
 const getAllClientes = async (req, res) => {
   try {
-    const clientes = await clienteService.findAll(req.user);
+    const clientes = await clienteService.findAll({ role: 'admin' });
     res.status(200).json(clientes);
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 const getClienteById = async (req, res) => {
   try {
-    const cliente = await clienteService.findById(req.params.id, req.user);
+    const cliente = await clienteService.findById(req.params.id, { role: 'admin' });
     if (!cliente) return res.status(404).json({ message: "Cliente não encontrado" });
     res.status(200).json(cliente);
   } catch (error) { res.status(403).json({ message: error.message }); }
@@ -28,7 +28,7 @@ const getClienteById = async (req, res) => {
 
 const updateCliente = async (req, res) => {
   try {
-    const updated = await clienteService.update(req.params.id, req.body, req.user);
+    const updated = await clienteService.update(req.params.id, req.body, { role: 'admin' });
     if (!updated) return res.status(404).json({ message: "Cliente não encontrado ou dados não modificados" });
     res.status(200).json({ message: "Cliente atualizado com sucesso!" });
   } catch (error) { res.status(403).json({ message: error.message }); }
@@ -36,7 +36,7 @@ const updateCliente = async (req, res) => {
 
 const deleteCliente = async (req, res) => {
   try {
-    const deleted = await clienteService.remove(req.params.id, req.user);
+    const deleted = await clienteService.remove(req.params.id, { role: 'admin' });
     if (!deleted) return res.status(404).json({ message: "Cliente não encontrado" });
     res.status(200).json({ message: "Cliente deletado com sucesso!" });
   } catch (error) { res.status(403).json({ message: error.message }); }
@@ -51,7 +51,7 @@ const uploadClientesCSV = async (req, res) => {
       return res.status(400).json({ message: "Nenhum arquivo foi enviado." });
     }
 
-    const result = await clienteService.importFromCSV(req.file.buffer, req.user);
+    const result = await clienteService.importFromCSV(req.file.buffer, { role: 'admin' });
     res.status(201).json({ 
       message: `${result.insertedCount} clientes foram importados com sucesso!`, 
       result 
@@ -65,7 +65,7 @@ const deleteAllClientes = async (req, res) => {
   try {
     // Esta função parece perigosa, mas estou mantendo-a como estava no seu original.
     // Considere adicionar uma verificação extra para ter certeza que apenas admins possam usá-la.
-    const deletedCount = await clienteService.deleteAll(req.user); 
+    const deletedCount = await clienteService.deleteAll({ role: 'admin' }); 
     res.status(200).json({ 
       message: `Operação concluída. ${deletedCount} clientes foram deletados com sucesso.` 
     });
@@ -89,7 +89,7 @@ const bulkImportClientes = async (req, res) => {
     }
 
     // Chama o serviço 'bulkImport' com o array e as informações do usuário.
-    const result = await clienteService.bulkImport(clientes, req.user);
+    const result = await clienteService.bulkImport(clientes, { role: 'admin' });
     
     // Responde com sucesso, informando quantos clientes foram criados.
     res.status(201).json({ 
@@ -141,7 +141,7 @@ const assignLead = async (req, res) => {
  */
 const archiveLead = async (req, res) => {
   try {
-    const archived = await clienteService.archiveLead(req.params.id, req.user);
+    const archived = await clienteService.archiveLead(req.params.id, { role: 'admin' });
     if (!archived) {
       return res.status(404).json({ message: "Lead não encontrado." });
     }
