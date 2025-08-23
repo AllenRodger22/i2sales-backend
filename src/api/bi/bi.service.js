@@ -248,8 +248,87 @@ const calculateConversionSeries = async (startDate, endDate, userIds = null) => 
   return days;
 };
 
+const calculateIndividualAnalysis = (produtividadeData, clientesData) => {
+  const totalVendas = produtividadeData.reduce((sum, day) => sum + day.vendas, 0);
+  const totalLigacoes = produtividadeData.reduce((sum, day) => sum + day.ligacoes, 0);
+  const mediaLigacoesDia = totalLigacoes / produtividadeData.length;
+  const recordeLigacoes = Math.max(...produtividadeData.map(day => day.ligacoes));
+  
+  const followupsRealizados = clientesData.filter(client => 
+    client.data_followup && new Date(client.data_followup) <= new Date()
+  ).length;
+  
+  const followupsFuturos = clientesData.filter(client => 
+    client.data_followup && new Date(client.data_followup) > new Date()
+  ).length;
+  
+  return {
+    totalVendas,
+    mediaLigacoesDia: Math.round(mediaLigacoesDia * 100) / 100,
+    recordeLigacoes,
+    followupsRealizados,
+    followupsFuturos
+  };
+};
+
+const calculateComparativeAnalysis = (currentAnalysis, previousAnalysis) => {
+  const calculateChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100 * 100) / 100;
+  };
+  
+  return {
+    vendas: {
+      current: currentAnalysis.totalVendas,
+      previous: previousAnalysis.totalVendas,
+      change: calculateChange(currentAnalysis.totalVendas, previousAnalysis.totalVendas)
+    },
+    ligacoes: {
+      current: currentAnalysis.mediaLigacoesDia,
+      previous: previousAnalysis.mediaLigacoesDia,
+      change: calculateChange(currentAnalysis.mediaLigacoesDia, previousAnalysis.mediaLigacoesDia)
+    }
+  };
+};
+
+const calculateTeamRankings = (agentsData) => {
+  const rankings = {
+    vendas: [...agentsData].sort((a, b) => b.totalVendas - a.totalVendas),
+    ligacoes: [...agentsData].sort((a, b) => b.totalLigacoes - a.totalLigacoes),
+    documentacoes: [...agentsData].sort((a, b) => b.documentacoes - a.documentacoes),
+    followups: [...agentsData].sort((a, b) => b.followupsRealizados - a.followupsRealizados)
+  };
+  
+  return rankings;
+};
+
+const calculateTeamFunnel = (agentsData) => {
+  const totals = agentsData.reduce((acc, agent) => {
+    acc.ligacoes += agent.totalLigacoes || 0;
+    acc.atendimentos += agent.atendimentos || 0;
+    acc.tratativas += agent.tratativas || 0;
+    acc.documentacoes += agent.documentacoes || 0;
+    acc.vendas += agent.totalVendas || 0;
+    return acc;
+  }, { ligacoes: 0, atendimentos: 0, tratativas: 0, documentacoes: 0, vendas: 0 });
+
+  return {
+    ...totals,
+    conversoes: {
+      ligacaoParaAtendimento: totals.ligacoes > 0 ? Math.round((totals.atendimentos / totals.ligacoes) * 100) : 0,
+      atendimentoParaTratativa: totals.atendimentos > 0 ? Math.round((totals.tratativas / totals.atendimentos) * 100) : 0,
+      tratativaParaDocumentacao: totals.tratativas > 0 ? Math.round((totals.documentacoes / totals.tratativas) * 100) : 0,
+      documentacaoParaVenda: totals.documentacoes > 0 ? Math.round((totals.vendas / totals.documentacoes) * 100) : 0
+    }
+  };
+};
+
 module.exports = {
   calculateKpis,
   calculateFunnel,
   calculateConversionSeries,
+  calculateIndividualAnalysis,
+  calculateComparativeAnalysis,
+  calculateTeamRankings,
+  calculateTeamFunnel,
 };
