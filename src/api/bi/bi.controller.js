@@ -155,6 +155,45 @@ const getAIInsights = async (req, res) => {
   }
 };
 
+const getCorretores = async (req, res) => {
+  try {
+    const { getDb } = require('../../config/database');
+    const corretores = await getDb().collection('users').find({ 
+      role: { $in: ['user', 'manager'] } 
+    }).toArray();
+    
+    const corretoresFormatted = corretores.map(c => ({
+      id: c._id,
+      name: c.name,
+      email: c.email,
+      role: c.role
+    }));
+    
+    res.status(200).json(corretoresFormatted);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCorretorAnalysis = async (req, res) => {
+  try {
+    const { corretorId } = req.params;
+    const analysis = await biService.calculateCorretorAnalysis(corretorId);
+    res.status(200).json(analysis);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getTeamAnalysis = async (req, res) => {
+  try {
+    const teamData = await biService.calculateTeamAnalysisFromDB();
+    res.status(200).json(teamData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getKpis,
   getFunnel,
@@ -162,4 +201,7 @@ module.exports = {
   uploadCSV,
   getAnalysis,
   getAIInsights,
+  getCorretores,
+  getCorretorAnalysis,
+  getTeamAnalysis,
 };

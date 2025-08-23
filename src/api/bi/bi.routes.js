@@ -55,4 +55,22 @@ router.post('/ai-insights',
   controller.getAIInsights
 );
 
+router.get('/corretores', 
+  authMiddleware, 
+  requireRole(['manager', 'admin']), 
+  controller.getCorretores
+);
+
+router.get('/corretor/:corretorId', 
+  authMiddleware, 
+  requireRole(['manager', 'admin']), 
+  controller.getCorretorAnalysis
+);
+
+router.get('/team-analysis', 
+  authMiddleware, 
+  requireRole(['manager', 'admin']), 
+  controller.getTeamAnalysis
+);
+
 module.exports = router;

@@ -323,6 +323,54 @@ const calculateTeamFunnel = (agentsData) => {
   };
 };
 
+const calculateCorretorAnalysis = async (corretorId) => {
+  const { ObjectId } = require('mongodb');
+  
+  const clientes = await getDb().collection('clientes').find({ 
+    ownerId: new ObjectId(corretorId) 
+  }).toArray();
+  
+  const statusCounts = {
+    tratativas: clientes.filter(c => c.status === 'Tratativa').length,
+    documentacoes: clientes.filter(c => c.status === 'Documentação' || c.status === 'Aguardando Doc').length,
+    vendas: clientes.filter(c => c.status === 'Venda').length,
+    arquivados: clientes.filter(c => c.status === 'Arquivado').length
+  };
+  
+  const followupsRealizados = clientes.filter(c => 
+    c.data_followup && new Date(c.data_followup) <= new Date()
+  ).length;
+  
+  const followupsFuturos = clientes.filter(c => 
+    c.data_followup && new Date(c.data_followup) > new Date()
+  ).length;
+  
+  return {
+    totalClientes: clientes.length,
+    statusCounts,
+    followupsRealizados,
+    followupsFuturos,
+    clientes
+  };
+};
+
+const calculateTeamAnalysisFromDB = async () => {
+  const corretores = await getDb().collection('users').find({ role: 'user' }).toArray();
+  const teamData = [];
+  
+  for (const corretor of corretores) {
+    const analysis = await calculateCorretorAnalysis(corretor._id);
+    teamData.push({
+      corretorId: corretor._id,
+      nome: corretor.name,
+      email: corretor.email,
+      ...analysis
+    });
+  }
+  
+  return teamData;
+};
+
 module.exports = {
   calculateKpis,
   calculateFunnel,
@@ -331,4 +379,6 @@ module.exports = {
   calculateComparativeAnalysis,
   calculateTeamRankings,
   calculateTeamFunnel,
+  calculateCorretorAnalysis,
+  calculateTeamAnalysisFromDB,
 };
