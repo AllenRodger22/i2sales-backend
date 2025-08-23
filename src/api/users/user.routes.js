@@ -6,6 +6,6 @@ const { requireRole } = require('../../middlewares/role.middleware');
 
 router.use(authMiddleware);
 
-router.get('/corretores', requireRole('manager'), userController.getCorretores);
+router.get('/corretores', requireRole(['manager', 'admin']), userController.getCorretores);
 
 module.exports = router;
