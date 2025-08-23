@@ -1,11 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('./bi.controller');
-const authMiddleware = require('../../middlewares/auth.middleware');
-const { requireRole } = require('../../middlewares/role.middleware');
-
-router.use(authMiddleware);
-router.use(requireRole(['manager', 'admin']));
 
 /**
  * @route   GET /api/bi/kpis
