@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const clienteRoutes = require('./api/clientes/cliente.routes');
 const authRoutes = require('./api/auth/auth.routes');
+const corretorRoutes = require('./api/corretores/corretor.routes');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', clienteRoutes);
+app.use('/api/corretores', corretorRoutes);
 
 app.get('/', (req, res) => {
   res.send('API do Sistema de Clientes está no ar!');

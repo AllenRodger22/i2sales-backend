@@ -23,10 +23,17 @@ const create = async (data, userId) => {
 };
 
 /**
- * Retorna todos os clientes pertencentes ao usuário logado.
- * @param {object} user - O objeto do usuário autenticado (vindo do req.user).
+ * Retorna os clientes conforme o usuário e opcionalmente filtra por corretor.
+ * @param {object} user - O usuário autenticado.
+ * @param {string} [corretorName] - Nome do corretor para filtrar (apenas admin/manager).
  */
-const findAll = async (user) => {
+const findAll = async (user, corretorName) => {
+    if (corretorName) {
+        const corretor = await getDb().collection('users').findOne({ name: corretorName, role: 'user' });
+        if (!corretor) return [];
+        return await getDb().collection(collection).find({ ownerId: corretor._id }).toArray();
+    }
+
     const isPrivileged = user.role === 'admin' || user.role === 'manager';
     const query = isPrivileged ? {} : { ownerId: new ObjectId(user.id) };
     return await getDb().collection(collection).find(query).toArray();
@@ -143,6 +150,9 @@ const importFromCSV = (buffer, user) => {
     });
 };
 
+// Export only defined service functions.
+// Historically this file exported a nonexistent `findAllGlobal`, which caused a ReferenceError
+// during deployment. The exports below intentionally list just the implemented functions.
 module.exports = {
     create,
     findAll,
