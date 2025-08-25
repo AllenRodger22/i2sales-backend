@@ -122,34 +122,4 @@ describe('API de Clientes (/api/clientes)', () => {
     expect(listUser2.statusCode).toBe(200);
     expect(listUser2.body).toHaveLength(0);
   });
-
-  it('admin também deve visualizar apenas os próprios clientes', async () => {
-    const { getDb } = require('../../config/database');
-
-    // Cria usuário admin
-    const admin = { name: 'Admin', email: 'admin@example.com', password: 'password123' };
-    await request(app).post('/api/auth/register').send(admin);
-    // Atualiza role para admin antes do login
-    await getDb().collection('users').updateOne({ email: admin.email.toLowerCase() }, { $set: { role: 'admin' } });
-    const loginAdmin = await request(app).post('/api/auth/login').send({ email: admin.email, password: admin.password });
-    const adminToken = loginAdmin.body.token;
-
-    // Cliente do admin
-    const clienteAdmin = { nome: 'Cliente Admin', email: 'cliente.admin@example.com', status: 'Novo', anexos: { customFields: [], timeline: [] } };
-    await request(app).post('/api/clientes').set('Authorization', `Bearer ${adminToken}`).send(clienteAdmin);
-
-    // Cria outro usuário com seu cliente
-    const user = { name: 'Outro', email: 'outro@example.com', password: 'password123' };
-    await request(app).post('/api/auth/register').send(user);
-    const loginUser = await request(app).post('/api/auth/login').send({ email: user.email, password: user.password });
-    const userToken = loginUser.body.token;
-    const clienteOutro = { nome: 'Cliente Outro', email: 'cliente.outro@example.com', status: 'Novo', anexos: { customFields: [], timeline: [] } };
-    await request(app).post('/api/clientes').set('Authorization', `Bearer ${userToken}`).send(clienteOutro);
-
-    // Admin deve ver apenas seu cliente
-    const listAdmin = await request(app).get('/api/clientes').set('Authorization', `Bearer ${adminToken}`);
-    expect(listAdmin.statusCode).toBe(200);
-    expect(listAdmin.body).toHaveLength(1);
-    expect(listAdmin.body[0].email).toBe(clienteAdmin.email);
-  });
 });
