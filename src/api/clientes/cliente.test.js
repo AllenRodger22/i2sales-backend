@@ -88,4 +88,38 @@ describe('API de Clientes (/api/clientes)', () => {
      expect(findResponse.body.nome).toBe(clienteData.nome);
      expect(findResponse.body._id).toBe(clienteId);
   });
+
+  it('deve retornar apenas os clientes pertencentes ao usuário autenticado', async () => {
+    // Cria um cliente para o primeiro usuário (token já definido no beforeAll)
+    const clienteUser1 = {
+      nome: 'Cliente User1',
+      email: 'cliente1@example.com',
+      status: 'Novo',
+      anexos: { customFields: [], timeline: [] },
+    };
+    await request(app)
+      .post('/api/clientes')
+      .set('Authorization', `Bearer ${token}`)
+      .send(clienteUser1);
+
+    // Cria um segundo usuário e autentica
+    const user2 = { name: 'User Two', email: 'user2@example.com', password: 'password123' };
+    await request(app).post('/api/auth/register').send(user2);
+    const login2 = await request(app).post('/api/auth/login').send({ email: user2.email, password: user2.password });
+    const token2 = login2.body.token;
+
+    // O primeiro usuário deve ver 1 cliente
+    const listUser1 = await request(app)
+      .get('/api/clientes')
+      .set('Authorization', `Bearer ${token}`);
+    expect(listUser1.statusCode).toBe(200);
+    expect(listUser1.body).toHaveLength(1);
+
+    // O segundo usuário não deve ver nenhum cliente
+    const listUser2 = await request(app)
+      .get('/api/clientes')
+      .set('Authorization', `Bearer ${token2}`);
+    expect(listUser2.statusCode).toBe(200);
+    expect(listUser2.body).toHaveLength(0);
+  });
 });
