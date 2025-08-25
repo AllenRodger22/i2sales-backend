@@ -36,8 +36,13 @@ const getDb = () => {
 // --- ADICIONE ESTA FUNÇÃO ---
 const closeDatabase = async () => {
   if (client) {
-    await client.close();
-    db = null; // Limpa a variável db
+    try {
+      await client.close();
+    } catch (error) {
+      console.error('Erro ao fechar o MongoDB.', error);
+    } finally {
+      db = null;
+    }
   }
 };
 

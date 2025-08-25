@@ -38,6 +38,8 @@ router.post('/', controller.createCliente);
 router.get('/', controller.getAllClientes);
 
 /**
+<<<<<<< codex/add-apis-for-available-brokers-and-clients
+=======
  * @route   GET /api/clientes/all
  * @desc    Obtém todos os clientes (apenas admin/manager)
  * @access  Privado (admin/manager)
@@ -59,6 +61,7 @@ router.get('/corretores', controller.listCorretores);
 router.get('/corretor/:corretorId', controller.getClientesByCorretor);
 
 /**
+>>>>>>> main
  * @route   GET /api/clientes/:id
  * @desc    Obtém um cliente específico pelo ID
  * @access  Privado (requer token)

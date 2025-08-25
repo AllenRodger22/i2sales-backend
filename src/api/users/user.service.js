@@ -44,7 +44,14 @@ const findByEmail = async (email) => {
 };
 
 const findAll = async () => {
-  return await getDb().collection(collection).find({}, { projection: { name: 1 } }).toArray();
+  return await getDb()
+    .collection(collection)
+    .find({ role: 'user' }, { projection: { name: 1 } })
+    .toArray();
+};
+
+const findByName = async (name) => {
+  return await getDb().collection(collection).findOne({ name, role: 'user' });
 };
 
 // Exporta as funções para que outros serviços (como o auth.service) possam usá-las.
@@ -52,4 +59,5 @@ module.exports = {
   create,
   findByEmail,
   findAll,
+  findByName,
 };
