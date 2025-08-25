@@ -1,6 +1,7 @@
 // /src/api/clientes/cliente.controller.js
 
 const clienteService = require('./cliente.service');
+const userService = require('../users/user.service');
 
 // --- FUNÇÃO PARA CADASTRO MANUAL (PERMANECE IGUAL) ---
 const createCliente = async (req, res) => {
@@ -42,8 +43,24 @@ const deleteCliente = async (req, res) => {
   } catch (error) { res.status(403).json({ message: error.message }); }
 };
 
-// <--- REMOVIDA: A função antiga que recebia o arquivo CSV foi substituída.
-// const uploadClientesCSV = async (req, res) => { ... };
+// Função para importar clientes a partir de um arquivo CSV.
+// Utiliza o serviço importFromCSV para garantir que cada cliente importado
+// seja associado ao usuário autenticado (req.user).
+const uploadClientesCSV = async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ message: 'Arquivo CSV é obrigatório.' });
+    }
+
+    const result = await clienteService.importFromCSV(req.file.buffer, req.user);
+    res.status(201).json({
+      message: `${result.insertedCount} clientes foram importados com sucesso!`,
+      result,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Falha ao importar clientes.', error: error.message });
+  }
+};
 
 const deleteAllClientes = async (req, res) => {
   try {
@@ -86,14 +103,41 @@ const bulkImportClientes = async (req, res) => {
   }
 };
 
+const listCorretores = async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  try {
+    const corretores = await userService.findAll();
+    const result = corretores.map(c => ({ id: c._id, name: c.name }));
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-module.exports = { 
+const getClientesByCorretor = async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  try {
+    const clientes = await clienteService.findByOwner(req.params.corretorId);
+    res.status(200).json(clientes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+module.exports = {
   createCliente,       // Para o cadastro manual
-  getAllClientes, 
-  getClienteById, 
-  updateCliente, 
-  deleteCliente, 
-  // uploadClientesCSV, // <--- REMOVIDO dos exports
+  getAllClientes,
+  getClienteById,
+  updateCliente,
+  deleteCliente,
+  uploadClientesCSV,
   deleteAllClientes,
-  bulkImportClientes   // <--- ADICIONADO: Para a importação em massa
+  bulkImportClientes,  // <--- ADICIONADO: Para a importação em massa
+  listCorretores,
+  getClientesByCorretor
 };

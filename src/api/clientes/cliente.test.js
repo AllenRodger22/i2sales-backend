@@ -88,4 +88,80 @@ describe('API de Clientes (/api/clientes)', () => {
      expect(findResponse.body.nome).toBe(clienteData.nome);
      expect(findResponse.body._id).toBe(clienteId);
   });
+
+  it('deve retornar apenas os clientes pertencentes ao usuário autenticado', async () => {
+    // Cria um cliente para o primeiro usuário (token já definido no beforeAll)
+    const clienteUser1 = {
+      nome: 'Cliente User1',
+      email: 'cliente1@example.com',
+      status: 'Novo',
+      anexos: { customFields: [], timeline: [] },
+    };
+    await request(app)
+      .post('/api/clientes')
+      .set('Authorization', `Bearer ${token}`)
+      .send(clienteUser1);
+
+    // Cria um segundo usuário e autentica
+    const user2 = { name: 'User Two', email: 'user2@example.com', password: 'password123' };
+    await request(app).post('/api/auth/register').send(user2);
+    const login2 = await request(app).post('/api/auth/login').send({ email: user2.email, password: user2.password });
+    const token2 = login2.body.token;
+
+    // O primeiro usuário deve ver 1 cliente
+    const listUser1 = await request(app)
+      .get('/api/clientes')
+      .set('Authorization', `Bearer ${token}`);
+    expect(listUser1.statusCode).toBe(200);
+    expect(listUser1.body).toHaveLength(1);
+
+    // O segundo usuário não deve ver nenhum cliente
+    const listUser2 = await request(app)
+      .get('/api/clientes')
+      .set('Authorization', `Bearer ${token2}`);
+    expect(listUser2.statusCode).toBe(200);
+    expect(listUser2.body).toHaveLength(0);
+  });
+
+  it('admin deve visualizar todos os clientes e acessar endpoints especiais', async () => {
+    const { getDb } = require('../../config/database');
+
+    // Cria usuário admin e define role
+    const admin = { name: 'Admin', email: 'admin@example.com', password: 'password123' };
+    await request(app).post('/api/auth/register').send(admin);
+    await getDb().collection('users').updateOne({ email: admin.email.toLowerCase() }, { $set: { role: 'admin' } });
+    const loginAdmin = await request(app).post('/api/auth/login').send({ email: admin.email, password: admin.password });
+    const adminToken = loginAdmin.body.token;
+
+    // Cria outro usuário e cliente associado
+    const user = { name: 'Outro', email: 'outro@example.com', password: 'password123' };
+    await request(app).post('/api/auth/register').send(user);
+    const loginUser = await request(app).post('/api/auth/login').send({ email: user.email, password: user.password });
+    const userToken = loginUser.body.token;
+    const clienteOutro = { nome: 'Cliente Outro', email: 'cliente.outro@example.com', status: 'Novo', anexos: { customFields: [], timeline: [] } };
+    await request(app).post('/api/clientes').set('Authorization', `Bearer ${userToken}`).send(clienteOutro);
+
+    // Cliente do admin
+    const clienteAdmin = { nome: 'Cliente Admin', email: 'cliente.admin@example.com', status: 'Novo', anexos: { customFields: [], timeline: [] } };
+    await request(app).post('/api/clientes').set('Authorization', `Bearer ${adminToken}`).send(clienteAdmin);
+
+    // Admin deve ver ambos os clientes na listagem geral
+    const listAdmin = await request(app).get('/api/clientes').set('Authorization', `Bearer ${adminToken}`);
+    expect(listAdmin.statusCode).toBe(200);
+    expect(listAdmin.body).toHaveLength(2);
+
+    // Admin pode listar corretores
+    const corretores = await request(app).get('/api/clientes/corretores').set('Authorization', `Bearer ${adminToken}`);
+    expect(corretores.statusCode).toBe(200);
+    const corretorOutro = corretores.body.find(c => c.name === user.name);
+    expect(corretorOutro).toBeTruthy();
+
+    // Admin pode buscar clientes de um corretor específico
+    const clientesOutro = await request(app)
+      .get(`/api/clientes/corretor/${corretorOutro.id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(clientesOutro.statusCode).toBe(200);
+    expect(clientesOutro.body).toHaveLength(1);
+    expect(clientesOutro.body[0].email).toBe(clienteOutro.email);
+  });
 });

@@ -43,8 +43,13 @@ const findByEmail = async (email) => {
   return await getDb().collection(collection).findOne({ email: email.toLowerCase() });
 };
 
+const findAll = async () => {
+  return await getDb().collection(collection).find({}, { projection: { name: 1 } }).toArray();
+};
+
 // Exporta as funções para que outros serviços (como o auth.service) possam usá-las.
 module.exports = {
   create,
   findByEmail,
+  findAll,
 };
