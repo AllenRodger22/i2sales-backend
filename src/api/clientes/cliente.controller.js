@@ -1,6 +1,7 @@
 // /src/api/clientes/cliente.controller.js
 
 const clienteService = require('./cliente.service');
+const userService = require('../users/user.service');
 
 // --- FUNÇÃO PARA CADASTRO MANUAL (PERMANECE IGUAL) ---
 const createCliente = async (req, res) => {
@@ -102,6 +103,31 @@ const bulkImportClientes = async (req, res) => {
   }
 };
 
+const listCorretores = async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  try {
+    const corretores = await userService.findAll();
+    const result = corretores.map(c => ({ id: c._id, name: c.name }));
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getClientesByCorretor = async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  try {
+    const clientes = await clienteService.findByOwner(req.params.corretorId);
+    res.status(200).json(clientes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 module.exports = {
   createCliente,       // Para o cadastro manual
@@ -111,5 +137,7 @@ module.exports = {
   deleteCliente,
   uploadClientesCSV,
   deleteAllClientes,
-  bulkImportClientes   // <--- ADICIONADO: Para a importação em massa
+  bulkImportClientes,  // <--- ADICIONADO: Para a importação em massa
+  listCorretores,
+  getClientesByCorretor
 };
