@@ -23,16 +23,11 @@ const create = async (data, userId) => {
 };
 
 /**
- * Retorna uma lista de clientes.
- * Se o usuário for 'admin', retorna todos.
- * Se for 'user', retorna apenas os que ele criou.
- * @param {object} user - O objeto do usuário logado (vindo do req.user).
+ * Retorna todos os clientes pertencentes ao usuário logado.
+ * @param {object} user - O objeto do usuário autenticado (vindo do req.user).
  */
 const findAll = async (user) => {
-    const query = {};
-    if (user.role !== 'admin') {
-        query.ownerId = new ObjectId(user.id); // Filtra os resultados pelo ID do dono
-    }
+    const query = { ownerId: new ObjectId(user.id) }; // Sempre filtra pelo ID do corretor
     return await getDb().collection(collection).find(query).toArray();
 };
 
@@ -46,8 +41,8 @@ const findById = async (id, user) => {
     const cliente = await getDb().collection(collection).findOne({ _id: new ObjectId(id) });
     if (!cliente) return null; // Se o cliente não existe, retorna nulo
 
-    // Se o usuário não for admin E o dono do cliente não for ele, lança um erro de permissão
-    if (user.role !== 'admin' && cliente.ownerId.toString() !== user.id) {
+    // Impede acesso a clientes de outros usuários
+    if (cliente.ownerId.toString() !== user.id) {
         throw new Error('Acesso negado a este recurso.');
     }
     return cliente;
