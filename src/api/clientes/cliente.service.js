@@ -153,6 +153,7 @@ const importFromCSV = (buffer, user) => {
 module.exports = {
     create,
     findAll,
+    findAllGlobal,
     findById,
     update,
     remove,

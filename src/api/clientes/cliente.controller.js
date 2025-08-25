@@ -23,6 +23,16 @@ const getAllClientes = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+const getAllClientesAll = async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  try {
+    const clientes = await clienteService.findAllGlobal();
+    res.status(200).json(clientes);
+  } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 const getClienteById = async (req, res) => {
   try {
     const cliente = await clienteService.findById(req.params.id, req.user);
@@ -110,6 +120,7 @@ const bulkImportClientes = async (req, res) => {
 module.exports = {
   createCliente,       // Para o cadastro manual
   getAllClientes,
+  getAllClientesAll,
   getClienteById,
   updateCliente,
   deleteCliente,
