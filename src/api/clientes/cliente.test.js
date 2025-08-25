@@ -1,5 +1,3 @@
-// /src/api/clientes/cliente.test.js
-
 const request = require('supertest');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
@@ -46,8 +44,7 @@ afterAll(async () => {
   await closeDatabase(); // Usa a nova função para fechar a conexão
 });
 
-
-// --- SUÍTE DE TESTES (NENHUMA MUDANÇA NECESSÁRIA AQUI) ---
+// --- SUÍTE DE TESTES ---
 describe('API de Clientes (/api/clientes)', () => {
   it('deve retornar 401 Unauthorized se nenhum token for fornecido', async () => {
     const response = await request(app).get('/api/clientes');
@@ -80,13 +77,13 @@ describe('API de Clientes (/api/clientes)', () => {
   });
   
   it('deve encontrar um cliente recém-criado pelo seu ID', async () => {
-     const clienteData = { nome: "Cliente Encontrado", email: "findme@test.com", status: "Novo", anexos: { customFields: [], timeline: [] } };
-     const createResponse = await request(app).post('/api/clientes').set('Authorization', `Bearer ${token}`).send(clienteData);
-     const clienteId = createResponse.body.id;
-     const findResponse = await request(app).get(`/api/clientes/${clienteId}`).set('Authorization', `Bearer ${token}`);
-     expect(findResponse.statusCode).toBe(200);
-     expect(findResponse.body.nome).toBe(clienteData.nome);
-     expect(findResponse.body._id).toBe(clienteId);
+      const clienteData = { nome: "Cliente Encontrado", email: "findme@test.com", status: "Novo", anexos: { customFields: [], timeline: [] } };
+      const createResponse = await request(app).post('/api/clientes').set('Authorization', `Bearer ${token}`).send(clienteData);
+      const clienteId = createResponse.body.id;
+      const findResponse = await request(app).get(`/api/clientes/${clienteId}`).set('Authorization', `Bearer ${token}`);
+      expect(findResponse.statusCode).toBe(200);
+      expect(findResponse.body.nome).toBe(clienteData.nome);
+      expect(findResponse.body._id).toBe(clienteId);
   });
 
   it('deve retornar apenas os clientes pertencentes ao usuário autenticado', async () => {
