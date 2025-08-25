@@ -120,7 +120,7 @@ describe('API de Clientes (/api/clientes)', () => {
     expect(listUser2.body).toHaveLength(0);
   });
 
-  it('admin deve visualizar todos os clientes e acessar endpoints especiais', async () => {
+  it('admin deve acessar todos os clientes via endpoint dedicado e manter funcionalidades especiais', async () => {
     const { getDb } = require('../../config/database');
 
     // Cria usuário admin e define role
@@ -142,10 +142,19 @@ describe('API de Clientes (/api/clientes)', () => {
     const clienteAdmin = { nome: 'Cliente Admin', email: 'cliente.admin@example.com', status: 'Novo', anexos: { customFields: [], timeline: [] } };
     await request(app).post('/api/clientes').set('Authorization', `Bearer ${adminToken}`).send(clienteAdmin);
 
-    // Admin deve ver ambos os clientes na listagem geral
+    // Admin deve ver apenas seus clientes no endpoint padrão
     const listAdmin = await request(app).get('/api/clientes').set('Authorization', `Bearer ${adminToken}`);
     expect(listAdmin.statusCode).toBe(200);
-    expect(listAdmin.body).toHaveLength(2);
+    expect(listAdmin.body).toHaveLength(1);
+
+    // Admin pode ver todos os clientes no endpoint /all
+    const listAdminAll = await request(app).get('/api/clientes/all').set('Authorization', `Bearer ${adminToken}`);
+    expect(listAdminAll.statusCode).toBe(200);
+    expect(listAdminAll.body).toHaveLength(2);
+
+    // Usuário comum não pode acessar o endpoint /all
+    const listUserAll = await request(app).get('/api/clientes/all').set('Authorization', `Bearer ${userToken}`);
+    expect(listUserAll.statusCode).toBe(403);
 
     // Admin pode listar corretores
     const corretores = await request(app).get('/api/clientes/corretores').set('Authorization', `Bearer ${adminToken}`);

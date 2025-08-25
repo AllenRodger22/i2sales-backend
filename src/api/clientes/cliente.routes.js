@@ -38,6 +38,13 @@ router.post('/', controller.createCliente);
 router.get('/', controller.getAllClientes);
 
 /**
+ * @route   GET /api/clientes/all
+ * @desc    Obtém todos os clientes (apenas admin/manager)
+ * @access  Privado (admin/manager)
+ */
+router.get('/all', controller.getAllClientesAll);
+
+/**
  * @route   GET /api/clientes/corretores
  * @desc    Lista os corretores por nome
  * @access  Privado (admin/manager)

@@ -27,9 +27,14 @@ const create = async (data, userId) => {
  * @param {object} user - O objeto do usuário autenticado (vindo do req.user).
  */
 const findAll = async (user) => {
-    const isPrivileged = user.role === 'admin' || user.role === 'manager';
-    const query = isPrivileged ? {} : { ownerId: new ObjectId(user.id) };
-    return await getDb().collection(collection).find(query).toArray();
+    return await getDb()
+        .collection(collection)
+        .find({ ownerId: new ObjectId(user.id) })
+        .toArray();
+};
+
+const findAllGlobal = async () => {
+    return await getDb().collection(collection).find({}).toArray();
 };
 
 /**
@@ -146,6 +151,7 @@ const importFromCSV = (buffer, user) => {
 module.exports = {
     create,
     findAll,
+    findAllGlobal,
     findById,
     update,
     remove,
