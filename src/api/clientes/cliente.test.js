@@ -1,6 +1,8 @@
 const request = require('supertest');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
+jest.setTimeout(30000);
+
 let mongoServer;
 let token;
 let app; // Mova a variável app para ser definida no beforeAll
@@ -11,6 +13,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   process.env.MONGO_URI = mongoServer.getUri();
   process.env.DB_NAME = 'testDB';
+  process.env.JWT_SECRET = 'secret';
 
   // --- PARTE CRÍTICA DA CORREÇÃO ---
   // Força o Jest a limpar o cache de módulos para que os arquivos
@@ -148,14 +151,13 @@ describe('API de Clientes (/api/clientes)', () => {
     expect(listAdmin.body).toHaveLength(2);
 
     // Admin pode listar corretores
-    const corretores = await request(app).get('/api/clientes/corretores').set('Authorization', `Bearer ${adminToken}`);
+    const corretores = await request(app).get('/api/corretores').set('Authorization', `Bearer ${adminToken}`);
     expect(corretores.statusCode).toBe(200);
-    const corretorOutro = corretores.body.find(c => c.name === user.name);
-    expect(corretorOutro).toBeTruthy();
+    expect(corretores.body).toContain(user.name);
 
     // Admin pode buscar clientes de um corretor específico
     const clientesOutro = await request(app)
-      .get(`/api/clientes/corretor/${corretorOutro.id}`)
+      .get(`/api/clientes?corretor=${encodeURIComponent(user.name)}`)
       .set('Authorization', `Bearer ${adminToken}`);
     expect(clientesOutro.statusCode).toBe(200);
     expect(clientesOutro.body).toHaveLength(1);
